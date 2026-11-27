@@ -3,41 +3,55 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cuotas sindicales</title>
+<title>SOETRA FATREFU · Cuotas sindicales</title>
 <style>
-:root{--ink:#14213d;--mut:#5c677d;--line:#d9dee7;--bg:#f5f7fa;--acc:#1f5f8b;--bad:#b23a48;--ok:#2d6a4f}
+:root{--ink:#14213d;--mut:#5c677d;--line:#d9dee7;--bg:#f5f7fa;--acc:#1f5f8b;--bad:#b23a48;--ok:#2d6a4f;--gold:#fca311}
 *{box-sizing:border-box}
 body{margin:0;font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg)}
 header{background:var(--ink);color:#fff;padding:12px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-header h1{font-size:18px;margin:0;flex:1}
+.logo{display:flex;gap:10px;align-items:center;flex:1}
+.badge{width:48px;height:48px;border-radius:50%;background:var(--gold);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;line-height:1;border:2px solid #fff;flex-shrink:0}
+.badge small{font-size:8px;letter-spacing:1px}.badge span{font-size:11px}
+.logo-text{line-height:1.15}.logo-text b{font-size:18px}.logo-text small{color:var(--gold);font-weight:700;letter-spacing:1px}
+.tag{background:var(--gold);color:var(--ink);font-size:11px;font-weight:800;padding:4px 10px;border-radius:20px}
 main{max-width:900px;margin:0 auto;padding:16px}
 nav{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
 button,input,select,textarea{font:inherit}
 button{background:var(--acc);color:#fff;border:0;border-radius:6px;padding:8px 14px;cursor:pointer}
 button.sec{background:#fff;color:var(--ink);border:1px solid var(--line)}
 button.on{background:var(--ink);color:#fff}
-button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
-input,textarea{padding:8px;border:1px solid var(--line);border-radius:6px;width:100%}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+input,textarea,select{padding:8px;border:1px solid var(--line);border-radius:6px;width:100%;background:#fff;color:var(--ink)}
+header select{width:auto;font-weight:700}
 .card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:14px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:end}.row>*{flex:1;min-width:130px}
 label{font-size:13px;color:var(--mut);display:block}
 .wrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:14px}
 th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
-.bad{color:var(--bad);font-weight:600}.ok{color:var(--ok);font-weight:600}
-#msg{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:6px;display:none;max-width:90%}
+.bad{color:var(--bad);font-weight:600}.ok{color:var(--ok);font-weight:600}.mut{color:var(--mut)}
+#msg{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:6px;display:none;max-width:90%;z-index:9}
 .big{font-size:30px;font-weight:700}
+.login-logo{width:84px;height:84px;border-radius:50%;background:var(--ink);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 10px;border:4px solid var(--gold)}
+.login-logo b{font-size:16px}.login-logo small{font-size:10px;color:var(--gold);letter-spacing:1px}
 </style>
 </head>
 <body>
-<header><h1 id="tit">Cuotas sindicales</h1><span id="quien"></span><button class="sec" id="salir" hidden>Salir</button></header>
+<header>
+  <div class="logo">
+    <div class="badge"><small>SOETRA</small><span>FATREFU</span></div>
+    <div class="logo-text"><b id="tit">SOETRA FATREFU</b><br><small>Cuotas sindicales</small></div>
+  </div>
+  <span id="entSel"></span><span id="quien" class="mut"></span><span id="rolBadge"></span><button class="sec" id="salir" hidden>Salir</button>
+</header>
 <main id="app"></main>
 <div id="msg" role="status"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-// === CONFIGURACIÓN: pegá los datos de tu proyecto (Supabase → Project Settings → API) ===
+// === CONFIGURACIÓN ===
 const SUPABASE_URL = "https://bvbybnalijevqhlulibi.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2YnlibmFsamlldnFobHVsaWJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU3NDI4MzgsImV4cCI6MjExMTMxODgzOH0.9Fk4ssDMzK60TGlwmrK_Pnoup6X5OhQ_hFzD9RGsFh0";   // la clave pública "anon", nunca la service_role
+const SUPABASE_ANON_KEY = "PEGA_ACA_LA_CLAVE_COMPLETA_CON_EL_BOTON_COPIAR_DE_SUPABASE";
+const ADMIN_EMAIL = "nolberto37@hotmail.com";   // debe coincidir con migracion.sql
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const $ = s => document.querySelector(s), app = $("#app");
@@ -45,40 +59,58 @@ const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 const $$ = n => "$ " + Number(n).toLocaleString("es-AR", {minimumFractionDigits: 2});
 const mes = d => new Date(d + "T00:00:00").toLocaleDateString("es-AR", {month: "long", year: "numeric"});
 const solo = t => String(t || "").replace(/\D/g, "");
-let P = null, E = null, tab = "cuotas";
+let P = null, E = null, ENTS = [], tab = "cuotas", SUPER = false;
 
-function aviso(t) { const m = $("#msg"); m.textContent = t; m.style.display = "block"; setTimeout(() => m.style.display = "none", 3500); }
+function aviso(t) { const m = $("#msg"); m.textContent = t; m.style.display = "block"; setTimeout(() => m.style.display = "none", 4000); }
 async function ok(q) { const r = await q; if (r.error) { aviso("Error: " + r.error.message); throw r.error; } return r.data; }
-
 $("#salir").onclick = async () => { await sb.auth.signOut(); location.reload(); };
 
 async function boot() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) return login();
-  const { data: p } = await sb.from("perfiles").select("*").eq("id", session.user.id).maybeSingle();
-  if (!p) { app.innerHTML = '<div class="card">Tu usuario todavía no tiene una entidad asignada. Pedile al administrador que te dé de alta.</div>'; $("#salir").hidden = false; return; }
-  P = p;
-  E = (await sb.from("entidades").select("*").eq("id", p.entidad_id).single()).data;
-  $("#tit").textContent = E.nombre + " · Cuotas";
-  $("#quien").textContent = p.rol;
+  SUPER = (session.user.email || "").toLowerCase() === ADMIN_EMAIL.toLowerCase();
   $("#salir").hidden = false;
+  $("#quien").textContent = session.user.email;
+
+  if (SUPER) {
+    ENTS = await ok(sb.from("entidades").select("*").order("id"));
+    if (!ENTS.length) { app.innerHTML = '<div class="card">No hay entidades. Ejecutá schema.sql y migracion.sql en Supabase.</div>'; return; }
+    E = ENTS.find(x => x.id === (E && E.id)) || ENTS[0];
+    $("#rolBadge").innerHTML = '<span class="tag">★ ADMINISTRADOR</span>';
+    $("#entSel").innerHTML = '<select id="selE" aria-label="Entidad">' + ENTS.map(x => `<option value="${x.id}" ${x.id === E.id ? "selected" : ""}>${esc(x.nombre)}</option>`).join("") + "</select>";
+    $("#selE").onchange = e => { E = ENTS.find(x => x.id == e.target.value); staff(); };
+    return staff();
+  }
+
+  const { data: p, error } = await sb.from("perfiles").select("*").eq("id", session.user.id).maybeSingle();
+  if (error) return aviso("Error: " + error.message);
+  if (!p) { app.innerHTML = '<div class="card">Tu usuario todavía no tiene una entidad asignada. Pedile al administrador que te dé de alta.</div>'; return; }
+  P = p;
+  E = await ok(sb.from("entidades").select("*").eq("id", p.entidad_id).single());
+  $("#tit").textContent = E.nombre;
+  $("#rolBadge").innerHTML = `<span class="tag">${esc(p.rol)}</span>`;
   p.rol === "afiliado" ? portal() : staff();
 }
 
 function login() {
-  app.innerHTML = `<div class="card" style="max-width:360px;margin:40px auto">
-    <h2 style="margin-top:0">Ingresar</h2>
-    <label>Correo</label><input id="em" type="email" autocomplete="username">
-    <label style="margin-top:8px">Contraseña</label><input id="pw" type="password" autocomplete="current-password">
-    <p><button id="go">Ingresar</button></p></div>`;
-  $("#go").onclick = async () => {
-    const { error } = await sb.auth.signInWithPassword({ email: $("#em").value, password: $("#pw").value });
+  const falta = SUPABASE_ANON_KEY.startsWith("PEGA_ACA");
+  app.innerHTML = `<div class="card" style="max-width:360px;margin:40px auto;text-align:center">
+    <div class="login-logo"><b>SOETRA</b><small>FATREFU</small></div>
+    <h2 style="margin:0">SOETRA FATREFU</h2><p class="mut" style="margin-top:4px">Cuotas sindicales</p>
+    ${falta ? '<p class="bad">Falta pegar la clave anon de Supabase en el archivo (SUPABASE_ANON_KEY).</p>' : ""}
+    <div style="text-align:left"><label>Correo</label><input id="em" type="email" autocomplete="username">
+    <label style="margin-top:8px">Contraseña</label><input id="pw" type="password" autocomplete="current-password"></div>
+    <p><button id="go" style="width:100%">Ingresar</button></p></div>`;
+  const entrar = async () => {
+    if (falta) return aviso("Primero pegá la clave anon en el archivo");
+    const { error } = await sb.auth.signInWithPassword({ email: $("#em").value.trim(), password: $("#pw").value });
     if (error) return aviso("No se pudo ingresar: " + error.message);
     boot();
   };
+  $("#go").onclick = entrar;
+  $("#pw").onkeydown = e => { if (e.key === "Enter") entrar(); };
 }
 
-// ---------- Portal del afiliado ----------
 async function portal() {
   const car = await ok(sb.from("cargos").select("*").order("periodo", { ascending: false }));
   const deuda = car.reduce((s, c) => s + (c.monto - c.pagado), 0);
@@ -89,25 +121,27 @@ async function portal() {
     <td class="${c.pagado >= c.monto ? "ok" : "bad"}">${c.pagado >= c.monto ? "Pagada" : "Pendiente"}</td></tr>`).join("") || '<tr><td colspan="4">Todavía no hay cuotas.</td></tr>'}</table></div>`;
 }
 
-// ---------- Panel administrativo ----------
 function staff() {
-  app.innerHTML = `<nav>${[["cuotas","Cuotas y morosos"],["afiliados","Afiliados"],["pagos","Pagos"]]
-    .map(([k, t]) => `<button class="${tab === k ? "on" : "sec"}" data-t="${k}">${t}</button>`).join("")}</nav><div id="vista"></div>`;
+  $("#tit").textContent = SUPER ? "Panel Administrador" : E.nombre;
+  const tabs = [["cuotas", "Cuotas y morosos"], ["afiliados", "Afiliados"], ["pagos", "Pagos"]];
+  if (SUPER) tabs.push(["admin", "★ Administración"]);
+  if (!tabs.some(t => t[0] === tab)) tab = "cuotas";
+  app.innerHTML = `<nav>${tabs.map(([k, t]) => `<button class="${tab === k ? "on" : "sec"}" data-t="${k}">${t}</button>`).join("")}</nav><div id="vista"></div>`;
   app.querySelectorAll("nav button").forEach(b => b.onclick = () => { tab = b.dataset.t; staff(); });
-  ({ cuotas: vCuotas, afiliados: vAfiliados, pagos: vPagos })[tab]();
+  ({ cuotas: vCuotas, afiliados: vAfiliados, pagos: vPagos, admin: vAdmin })[tab]();
 }
 
 async function vCuotas() {
   const hoy = new Date().toISOString().slice(0, 7);
   $("#vista").innerHTML = `<div class="card"><div class="row"><div><label>Mes a generar</label><input id="per" type="month" value="${hoy}"></div>
     <button id="gen">Generar cuotas del mes</button></div>
-    <p class="mut">Alias de cobro: <b>${esc(E.alias_cobro || "sin configurar")}</b> · Cuota base: <b>${$$(E.cuota_base)}</b></p></div>
+    <p class="mut">${esc(E.nombre)} · Alias de cobro: <b>${esc(E.alias_cobro || "sin configurar")}</b> · Cuota base: <b>${$$(E.cuota_base)}</b></p></div>
     <div class="card wrap" id="mor">Cargando…</div>`;
   $("#gen").onclick = async () => {
-    const n = await ok(sb.rpc("generar_cargos", { p_periodo: $("#per").value + "-01" }));
+    const n = await ok(sb.rpc("generar_cargos", { p_periodo: $("#per").value + "-01", p_entidad: E.id }));
     aviso(n + " cuotas nuevas generadas"); vCuotas();
   };
-  const car = await ok(sb.from("cargos").select("monto,pagado,periodo,afiliados(nombre,cuil)").order("periodo"));
+  const car = await ok(sb.from("cargos").select("monto,pagado,periodo,afiliados(nombre,cuil)").eq("entidad_id", E.id).order("periodo"));
   const m = {};
   car.filter(c => c.pagado < c.monto).forEach(c => {
     const k = c.afiliados.cuil; m[k] ??= { n: c.afiliados.nombre, k, d: 0, q: 0 };
@@ -123,15 +157,15 @@ async function vAfiliados() {
   $("#vista").innerHTML = `<div class="card"><div class="row">
     <div><label>CUIL</label><input id="cu" inputmode="numeric"></div><div><label>Nombre y apellido</label><input id="no"></div>
     <div><label>Correo (opcional)</label><input id="co" type="email"></div><div><label>Cuota propia (opcional)</label><input id="cq" type="number" step="0.01"></div>
-    <button id="add">Agregar afiliado</button></div></div><div class="card wrap" id="lst">Cargando…</div>`;
+    <button id="add">Agregar a ${esc(E.nombre)}</button></div></div><div class="card wrap" id="lst">Cargando…</div>`;
   $("#add").onclick = async () => {
     const cuil = solo($("#cu").value);
     if (cuil.length !== 11 || !$("#no").value.trim()) return aviso("Completá un CUIL de 11 dígitos y el nombre");
     await ok(sb.from("afiliados").insert({ entidad_id: E.id, cuil, nombre: $("#no").value.trim(), email: $("#co").value || null, cuota: $("#cq").value || null }));
     aviso("Afiliado agregado"); vAfiliados();
   };
-  const a = await ok(sb.from("afiliados").select("*").order("nombre"));
-  $("#lst").innerHTML = `<b>${a.length} afiliados</b><table><tr><th>Nombre</th><th>CUIL</th><th>Cuota</th><th>Estado</th><th></th></tr>
+  const a = await ok(sb.from("afiliados").select("*").eq("entidad_id", E.id).order("nombre"));
+  $("#lst").innerHTML = `<b>${a.length} afiliados en ${esc(E.nombre)}</b><table><tr><th>Nombre</th><th>CUIL</th><th>Cuota</th><th>Estado</th><th></th></tr>
     ${a.map(x => `<tr><td>${esc(x.nombre)}</td><td>${esc(x.cuil)}</td><td>${x.cuota ? $$(x.cuota) : "base"}</td>
     <td class="${x.estado === "activo" ? "ok" : "bad"}">${x.estado}</td>
     <td><button class="sec" data-id="${x.id}" data-e="${x.estado}">${x.estado === "activo" ? "Dar de baja" : "Reactivar"}</button></td></tr>`).join("")}</table>`;
@@ -141,7 +175,7 @@ async function vAfiliados() {
 }
 
 async function vPagos() {
-  $("#vista").innerHTML = `<div class="card"><b>Registrar un pago</b><div class="row">
+  $("#vista").innerHTML = `<div class="card"><b>Registrar un pago · ${esc(E.nombre)}</b><div class="row">
     <div><label>CUIL</label><input id="pc" inputmode="numeric"></div><div><label>Monto</label><input id="pm" type="number" step="0.01"></div>
     <div><label>Fecha</label><input id="pf" type="date" value="${new Date().toISOString().slice(0, 10)}"></div>
     <div><label>Referencia</label><input id="pr"></div><button id="reg">Registrar</button></div></div>
@@ -149,9 +183,10 @@ async function vPagos() {
     <p class="mut">Una línea por transferencia: <code>cuil,monto,fecha(AAAA-MM-DD),referencia</code></p>
     <textarea id="csv" rows="4" placeholder="20123456789,15000,2026-12-03,Transf 8841"></textarea>
     <p><button id="imp">Importar y conciliar</button></p></div><div class="card wrap" id="lp">Cargando…</div>`;
+  const pago = (cu, mo, fe, re) => ok(sb.rpc("registrar_pago", { p_cuil: cu, p_monto: mo, p_fecha: fe || null, p_ref: re || null, p_entidad: E.id }));
   $("#reg").onclick = async () => {
     if (!(Number($("#pm").value) > 0)) return aviso("Ingresá un monto válido");
-    const r = await ok(sb.rpc("registrar_pago", { p_cuil: $("#pc").value, p_monto: $("#pm").value, p_fecha: $("#pf").value, p_ref: $("#pr").value }));
+    const r = await pago($("#pc").value, $("#pm").value, $("#pf").value, $("#pr").value);
     aviso(r === "conciliado" ? "Pago conciliado" : "No hay afiliado con ese CUIL: quedó pendiente"); vPagos();
   };
   $("#imp").onclick = async () => {
@@ -159,15 +194,50 @@ async function vPagos() {
     for (const l of $("#csv").value.split("\n").map(x => x.trim()).filter(Boolean)) {
       const [cu, mo, fe, re] = l.split(",").map(x => x.trim());
       if (!(Number(mo) > 0)) continue;
-      const r = await ok(sb.rpc("registrar_pago", { p_cuil: cu, p_monto: mo, p_fecha: fe || null, p_ref: re || null }));
-      r === "conciliado" ? c++ : p++;
+      (await pago(cu, mo, fe, re)) === "conciliado" ? c++ : p++;
     }
     aviso(c + " conciliados, " + p + " pendientes"); vPagos();
   };
-  const pg = await ok(sb.from("pagos").select("*,afiliados(nombre)").order("creado", { ascending: false }).limit(50));
+  const pg = await ok(sb.from("pagos").select("*,afiliados(nombre)").eq("entidad_id", E.id).order("creado", { ascending: false }).limit(50));
   $("#lp").innerHTML = `<b>Últimos pagos</b><table><tr><th>Fecha</th><th>Afiliado</th><th>CUIL</th><th>Monto</th><th>Estado</th></tr>
     ${pg.map(x => `<tr><td>${x.fecha}</td><td>${esc(x.afiliados?.nombre || "—")}</td><td>${esc(x.cuil_origen)}</td><td>${$$(x.monto)}</td>
     <td class="${x.estado === "conciliado" ? "ok" : "bad"}">${x.estado}</td></tr>`).join("") || '<tr><td colspan="5">Sin pagos.</td></tr>'}</table>`;
+}
+
+async function vAdmin() {
+  const roles = r => ["afiliado", "tesorero", "admin"].map(x => `<option ${x === r ? "selected" : ""}>${x}</option>`).join("");
+  $("#vista").innerHTML = `
+  <div class="card"><b>Datos de cobro de ${esc(E.nombre)}</b><div class="row">
+    <div><label>Alias o CBU donde transfieren</label><input id="al" value="${esc(E.alias_cobro || "")}"></div>
+    <div><label>Cuota base mensual ($)</label><input id="cb" type="number" step="0.01" value="${E.cuota_base}"></div>
+    <button id="gc">Guardar</button></div></div>
+  <div class="card"><b>Dar acceso a un usuario</b>
+    <p class="mut">Creá el usuario en Supabase (Authentication → Users), copiá su UUID y asignalo acá.</p>
+    <div class="row"><div><label>UUID del usuario</label><input id="uu"></div>
+    <div><label>Entidad</label><select id="ue">${ENTS.map(x => `<option value="${x.id}" ${x.id === E.id ? "selected" : ""}>${esc(x.nombre)}</option>`).join("")}</select></div>
+    <div><label>Rol</label><select id="ur">${roles("tesorero")}</select></div>
+    <div><label>CUIL (solo afiliados)</label><input id="ucu" inputmode="numeric"></div>
+    <button id="ga">Asignar</button></div></div>
+  <div class="card wrap"><b>Usuarios con acceso</b><div id="lu">Cargando…</div></div>`;
+  $("#gc").onclick = async () => {
+    await ok(sb.from("entidades").update({ alias_cobro: $("#al").value.trim(), cuota_base: $("#cb").value || 0 }).eq("id", E.id));
+    aviso("Datos guardados"); await boot(); tab = "admin"; staff();
+  };
+  $("#ga").onclick = async () => {
+    const id = $("#uu").value.trim();
+    if (id.length < 30) return aviso("Pegá el UUID completo del usuario");
+    await ok(sb.from("perfiles").upsert({ id, entidad_id: Number($("#ue").value), rol: $("#ur").value }));
+    if ($("#ur").value === "afiliado" && solo($("#ucu").value))
+      await ok(sb.from("afiliados").update({ user_id: id }).eq("entidad_id", Number($("#ue").value)).eq("cuil", solo($("#ucu").value)));
+    aviso("Acceso asignado"); vAdmin();
+  };
+  const per = await ok(sb.from("perfiles").select("*").order("entidad_id"));
+  $("#lu").innerHTML = `<table><tr><th>Usuario</th><th>Entidad</th><th>Rol</th></tr>
+    ${per.map(p => `<tr><td>${esc(p.id)}</td><td>${esc((ENTS.find(x => x.id === p.entidad_id) || {}).nombre || "-")}</td>
+    <td><select data-id="${p.id}">${roles(p.rol)}</select></td></tr>`).join("") || '<tr><td colspan="3">Todavía no asignaste usuarios.</td></tr>'}</table>`;
+  $("#lu").querySelectorAll("select").forEach(s => s.onchange = async () => {
+    await ok(sb.from("perfiles").update({ rol: s.value }).eq("id", s.dataset.id)); aviso("Rol actualizado");
+  });
 }
 
 boot();
