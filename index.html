@@ -37,7 +37,7 @@ th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-
 <script>
 // === CONFIGURACIÓN: pegá los datos de tu proyecto (Supabase → Project Settings → API) ===
 const SUPABASE_URL = "https://bvbybnalijevqhlulibi.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_qG9EUKC7YPpzzadGQCSGHQ_JIbJ3YxF";   // la clave pública "anon", nunca la service_role
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2YnlibmFsamlldnFobHVsaWJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU3NDI4MzgsImV4cCI6MjExMTMxODgzOH0.9Fk4ssDMzK60TGlwmrK_Pnoup6X5OhQ_hFzD9RGsFh0";   // la clave pública "anon", nunca la service_role
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const $ = s => document.querySelector(s), app = $("#app");
