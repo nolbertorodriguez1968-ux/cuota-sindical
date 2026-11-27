@@ -73,7 +73,8 @@ function login() {
     <p><button id="go">Ingresar</button></p></div>`;
   $("#go").onclick = async () => {
     const { error } = await sb.auth.signInWithPassword({ email: $("#em").value, password: $("#pw").value });
-    error ? aviso("Correo o contraseña incorrectos") : boot();
+    if (error) return aviso("No se pudo ingresar: " + error.message);
+    boot();
   };
 }
 
