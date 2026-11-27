@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuotas sindicales</title>
+<style>
+:root{--ink:#14213d;--mut:#5c677d;--line:#d9dee7;--bg:#f5f7fa;--acc:#1f5f8b;--bad:#b23a48;--ok:#2d6a4f}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg)}
+header{background:var(--ink);color:#fff;padding:12px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+header h1{font-size:18px;margin:0;flex:1}
+main{max-width:900px;margin:0 auto;padding:16px}
+nav{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+button,input,select,textarea{font:inherit}
+button{background:var(--acc);color:#fff;border:0;border-radius:6px;padding:8px 14px;cursor:pointer}
+button.sec{background:#fff;color:var(--ink);border:1px solid var(--line)}
+button.on{background:var(--ink);color:#fff}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+input,textarea{padding:8px;border:1px solid var(--line);border-radius:6px;width:100%}
+.card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:end}.row>*{flex:1;min-width:130px}
+label{font-size:13px;color:var(--mut);display:block}
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.bad{color:var(--bad);font-weight:600}.ok{color:var(--ok);font-weight:600}
+#msg{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:6px;display:none;max-width:90%}
+.big{font-size:30px;font-weight:700}
+</style>
+</head>
+<body>
+<header><h1 id="tit">Cuotas sindicales</h1><span id="quien"></span><button class="sec" id="salir" hidden>Salir</button></header>
+<main id="app"></main>
+<div id="msg" role="status"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+// === CONFIGURACIÓN: pegá los datos de tu proyecto (Supabase → Project Settings → API) ===
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";
+const SUPABASE_ANON_KEY = "TU-ANON-KEY";   // la clave pública "anon", nunca la service_role
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const $ = s => document.querySelector(s), app = $("#app");
+const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const $$ = n => "$ " + Number(n).toLocaleString("es-AR", {minimumFractionDigits: 2});
+const mes = d => new Date(d + "T00:00:00").toLocaleDateString("es-AR", {month: "long", year: "numeric"});
+const solo = t => String(t || "").replace(/\D/g, "");
+let P = null, E = null, tab = "cuotas";
+
+function aviso(t) { const m = $("#msg"); m.textContent = t; m.style.display = "block"; setTimeout(() => m.style.display = "none", 3500); }
+async function ok(q) { const r = await q; if (r.error) { aviso("Error: " + r.error.message); throw r.error; } return r.data; }
+
+$("#salir").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+
+async function boot() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return login();
+  const { data: p } = await sb.from("perfiles").select("*").eq("id", session.user.id).maybeSingle();
+  if (!p) { app.innerHTML = '<div class="card">Tu usuario todavía no tiene una entidad asignada. Pedile al administrador que te dé de alta.</div>'; $("#salir").hidden = false; return; }
+  P = p;
+  E = (await sb.from("entidades").select("*").eq("id", p.entidad_id).single()).data;
+  $("#tit").textContent = E.nombre + " · Cuotas";
+  $("#quien").textContent = p.rol;
+  $("#salir").hidden = false;
+  p.rol === "afiliado" ? portal() : staff();
+}
+
+function login() {
+  app.innerHTML = `<div class="card" style="max-width:360px;margin:40px auto">
+    <h2 style="margin-top:0">Ingresar</h2>
+    <label>Correo</label><input id="em" type="email" autocomplete="username">
+    <label style="margin-top:8px">Contraseña</label><input id="pw" type="password" autocomplete="current-password">
+    <p><button id="go">Ingresar</button></p></div>`;
+  $("#go").onclick = async () => {
+    const { error } = await sb.auth.signInWithPassword({ email: $("#em").value, password: $("#pw").value });
+    error ? aviso("Correo o contraseña incorrectos") : boot();
+  };
+}
+
+// ---------- Portal del afiliado ----------
+async function portal() {
+  const car = await ok(sb.from("cargos").select("*").order("periodo", { ascending: false }));
+  const deuda = car.reduce((s, c) => s + (c.monto - c.pagado), 0);
+  app.innerHTML = `<div class="card"><label>Tu deuda</label><div class="big ${deuda > 0 ? "bad" : "ok"}">${$$(deuda)}</div>
+    <p>Transferí a: <b>${esc(E.alias_cobro || "(sin alias cargado)")}</b><br>Indicá tu CUIL como referencia para acreditar el pago.</p></div>
+    <div class="card wrap"><table><tr><th>Período</th><th>Cuota</th><th>Pagado</th><th>Estado</th></tr>
+    ${car.map(c => `<tr><td>${mes(c.periodo)}</td><td>${$$(c.monto)}</td><td>${$$(c.pagado)}</td>
+    <td class="${c.pagado >= c.monto ? "ok" : "bad"}">${c.pagado >= c.monto ? "Pagada" : "Pendiente"}</td></tr>`).join("") || '<tr><td colspan="4">Todavía no hay cuotas.</td></tr>'}</table></div>`;
+}
+
+// ---------- Panel administrativo ----------
+function staff() {
+  app.innerHTML = `<nav>${[["cuotas","Cuotas y morosos"],["afiliados","Afiliados"],["pagos","Pagos"]]
+    .map(([k, t]) => `<button class="${tab === k ? "on" : "sec"}" data-t="${k}">${t}</button>`).join("")}</nav><div id="vista"></div>`;
+  app.querySelectorAll("nav button").forEach(b => b.onclick = () => { tab = b.dataset.t; staff(); });
+  ({ cuotas: vCuotas, afiliados: vAfiliados, pagos: vPagos })[tab]();
+}
+
+async function vCuotas() {
+  const hoy = new Date().toISOString().slice(0, 7);
+  $("#vista").innerHTML = `<div class="card"><div class="row"><div><label>Mes a generar</label><input id="per" type="month" value="${hoy}"></div>
+    <button id="gen">Generar cuotas del mes</button></div>
+    <p class="mut">Alias de cobro: <b>${esc(E.alias_cobro || "sin configurar")}</b> · Cuota base: <b>${$$(E.cuota_base)}</b></p></div>
+    <div class="card wrap" id="mor">Cargando…</div>`;
+  $("#gen").onclick = async () => {
+    const n = await ok(sb.rpc("generar_cargos", { p_periodo: $("#per").value + "-01" }));
+    aviso(n + " cuotas nuevas generadas"); vCuotas();
+  };
+  const car = await ok(sb.from("cargos").select("monto,pagado,periodo,afiliados(nombre,cuil)").order("periodo"));
+  const m = {};
+  car.filter(c => c.pagado < c.monto).forEach(c => {
+    const k = c.afiliados.cuil; m[k] ??= { n: c.afiliados.nombre, k, d: 0, q: 0 };
+    m[k].d += c.monto - c.pagado; m[k].q++;
+  });
+  const l = Object.values(m).sort((a, b) => b.d - a.d);
+  $("#mor").innerHTML = `<b>Morosos (${l.length}) · deuda total ${$$(l.reduce((s, x) => s + x.d, 0))}</b>
+    <table><tr><th>Afiliado</th><th>CUIL</th><th>Cuotas adeudadas</th><th>Deuda</th></tr>
+    ${l.map(x => `<tr><td>${esc(x.n)}</td><td>${esc(x.k)}</td><td>${x.q}</td><td class="bad">${$$(x.d)}</td></tr>`).join("") || '<tr><td colspan="4">Sin deudas.</td></tr>'}</table>`;
+}
+
+async function vAfiliados() {
+  $("#vista").innerHTML = `<div class="card"><div class="row">
+    <div><label>CUIL</label><input id="cu" inputmode="numeric"></div><div><label>Nombre y apellido</label><input id="no"></div>
+    <div><label>Correo (opcional)</label><input id="co" type="email"></div><div><label>Cuota propia (opcional)</label><input id="cq" type="number" step="0.01"></div>
+    <button id="add">Agregar afiliado</button></div></div><div class="card wrap" id="lst">Cargando…</div>`;
+  $("#add").onclick = async () => {
+    const cuil = solo($("#cu").value);
+    if (cuil.length !== 11 || !$("#no").value.trim()) return aviso("Completá un CUIL de 11 dígitos y el nombre");
+    await ok(sb.from("afiliados").insert({ entidad_id: E.id, cuil, nombre: $("#no").value.trim(), email: $("#co").value || null, cuota: $("#cq").value || null }));
+    aviso("Afiliado agregado"); vAfiliados();
+  };
+  const a = await ok(sb.from("afiliados").select("*").order("nombre"));
+  $("#lst").innerHTML = `<b>${a.length} afiliados</b><table><tr><th>Nombre</th><th>CUIL</th><th>Cuota</th><th>Estado</th><th></th></tr>
+    ${a.map(x => `<tr><td>${esc(x.nombre)}</td><td>${esc(x.cuil)}</td><td>${x.cuota ? $$(x.cuota) : "base"}</td>
+    <td class="${x.estado === "activo" ? "ok" : "bad"}">${x.estado}</td>
+    <td><button class="sec" data-id="${x.id}" data-e="${x.estado}">${x.estado === "activo" ? "Dar de baja" : "Reactivar"}</button></td></tr>`).join("")}</table>`;
+  $("#lst").querySelectorAll("button").forEach(b => b.onclick = async () => {
+    await ok(sb.from("afiliados").update({ estado: b.dataset.e === "activo" ? "baja" : "activo" }).eq("id", b.dataset.id)); vAfiliados();
+  });
+}
+
+async function vPagos() {
+  $("#vista").innerHTML = `<div class="card"><b>Registrar un pago</b><div class="row">
+    <div><label>CUIL</label><input id="pc" inputmode="numeric"></div><div><label>Monto</label><input id="pm" type="number" step="0.01"></div>
+    <div><label>Fecha</label><input id="pf" type="date" value="${new Date().toISOString().slice(0, 10)}"></div>
+    <div><label>Referencia</label><input id="pr"></div><button id="reg">Registrar</button></div></div>
+    <div class="card"><b>Importar del extracto del banco</b>
+    <p class="mut">Una línea por transferencia: <code>cuil,monto,fecha(AAAA-MM-DD),referencia</code></p>
+    <textarea id="csv" rows="4" placeholder="20123456789,15000,2026-12-03,Transf 8841"></textarea>
+    <p><button id="imp">Importar y conciliar</button></p></div><div class="card wrap" id="lp">Cargando…</div>`;
+  $("#reg").onclick = async () => {
+    if (!(Number($("#pm").value) > 0)) return aviso("Ingresá un monto válido");
+    const r = await ok(sb.rpc("registrar_pago", { p_cuil: $("#pc").value, p_monto: $("#pm").value, p_fecha: $("#pf").value, p_ref: $("#pr").value }));
+    aviso(r === "conciliado" ? "Pago conciliado" : "No hay afiliado con ese CUIL: quedó pendiente"); vPagos();
+  };
+  $("#imp").onclick = async () => {
+    let c = 0, p = 0;
+    for (const l of $("#csv").value.split("\n").map(x => x.trim()).filter(Boolean)) {
+      const [cu, mo, fe, re] = l.split(",").map(x => x.trim());
+      if (!(Number(mo) > 0)) continue;
+      const r = await ok(sb.rpc("registrar_pago", { p_cuil: cu, p_monto: mo, p_fecha: fe || null, p_ref: re || null }));
+      r === "conciliado" ? c++ : p++;
+    }
+    aviso(c + " conciliados, " + p + " pendientes"); vPagos();
+  };
+  const pg = await ok(sb.from("pagos").select("*,afiliados(nombre)").order("creado", { ascending: false }).limit(50));
+  $("#lp").innerHTML = `<b>Últimos pagos</b><table><tr><th>Fecha</th><th>Afiliado</th><th>CUIL</th><th>Monto</th><th>Estado</th></tr>
+    ${pg.map(x => `<tr><td>${x.fecha}</td><td>${esc(x.afiliados?.nombre || "—")}</td><td>${esc(x.cuil_origen)}</td><td>${$$(x.monto)}</td>
+    <td class="${x.estado === "conciliado" ? "ok" : "bad"}">${x.estado}</td></tr>`).join("") || '<tr><td colspan="5">Sin pagos.</td></tr>'}</table>`;
+}
+
+boot();
+</script>
+</body>
+</html>
