@@ -28,8 +28,7 @@ async function boot(){
  $("#salir").hidden=false;$("#quien").textContent=session.user.email;
  if(SUPER){ENTS=await ok(sb.from("entidades").select("*").order("id"));E=ENTS.find(x=>x.id===(E&&E.id))||ENTS[0];
   $("#rolBadge").innerHTML='<span class="tag">★ ADMINISTRADOR</span>';
-  $("#entSel").innerHTML='<select id="selE" aria-label="Entidad">'+ENTS.map(x=>`<option value="${x.id}" ${x.id===E.id?"selected":""}>${esc(x.nombre)}</option>`).join("")+"</select>";
-  $("#selE").onchange=e=>{E=ENTS.find(x=>x.id==e.target.value);staff()};return staff()}
+  return staff()}
  const {data:p,error}=await sb.from("perfiles").select("*").eq("id",UID).maybeSingle();
  if(error)return aviso("Error: "+error.message);
  if(!p){app.innerHTML='<div class="card">Tu usuario todavía no tiene acceso asignado. Pedíselo al administrador.</div>';return}
@@ -40,14 +39,14 @@ async function boot(){
 
 function navegar(t,fn){if(!t.some(x=>x[0]==tab))tab=t[0][0];app.innerHTML=`<nav>${t.map(([k,n])=>`<button class="${tab==k?"on":"sec"}" data-t="${k}">${n}</button>`).join("")}</nav><div id="vista"></div>`;app.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;fn()})}
 function staff(){$("#tit").textContent=SUPER?"Panel Administrador":E.nombre;
- const t=[["cuotas","Cuotas y morosos"],["afiliados","Afiliados"],["pagos","Pagos"]];if(SUPER)t.push(["solic","Solicitudes"],["cobro","CBU y %"],["admin","★ Administración"]);
+ const t=SUPER?[["afiliados","Afiliados"],["solic","Solicitudes"],["cobro","CBU y %"],["admin","★ Administración"]]:[["cuotas","Cuotas y morosos"],["afiliados","Afiliados"],["pagos","Pagos"]];
  navegar(t,staff);({cuotas:vCuotas,afiliados:vAfiliados,pagos:vPagos,solic:vSolic,cobro:vCobro,admin:vAdmin})[tab]()}
 function empresaUI(){navegar([["emp","Mi empresa"],["decl","Declaración mensual"]],empresaUI);(tab=="emp"?vEmp:vDecl)()}
 
 // ---- Admin: padrón por Excel / PDF / foto ----
 const _vA=vAfiliados,TODAS=()=>ENTS.length?ENTS:[E];
 vAfiliados=async()=>{await _vA();
- $("#add").textContent="Agregar a ambas entidades";
+ $("#add").textContent="Agregar afiliado";{const b=$("#lst b");if(b)b.textContent=b.textContent.replace(/ en .*/,"")}
  $("#add").onclick=async()=>{const cuil=solo($("#cu").value);if(cuil.length!=11||!$("#no").value.trim())return aviso("Completá un CUIL de 11 dígitos y el nombre");
   await ok(sb.from("afiliados").upsert(TODAS().map(e=>({entidad_id:e.id,cuil,nombre:$("#no").value.trim(),email:$("#co").value||null,cuota:$("#cq").value||null})),{onConflict:"entidad_id,cuil"}));aviso("Afiliado agregado en ambas entidades");vAfiliados()};
  $("#lst").querySelectorAll("button").forEach(b=>b.onclick=async()=>{const {cuil}=await ok(sb.from("afiliados").select("cuil").eq("id",b.dataset.id).single());
@@ -68,7 +67,7 @@ async function vSolic(cr){const s=await ok(sb.from("solicitudes").select("*").or
  if(cr)credenciales(cr[0],cr[1]);
  $("#vista").querySelectorAll("[data-a]").forEach(b=>b.onclick=async()=>{const x=s.find(q=>q.id==b.dataset.a),pw=clave();
   const {data,error}=await sb.functions.invoke("crear-usuario",{body:{email:x.email,password:pw,rol:x.funcion.toLowerCase(),telefono:x.telefono,solicitud_id:x.id}});
-  if(error||data?.error)return aviso("Error: "+(data?.error||error.message));vSolic([x,pw])});
+  let m=data?.error;if(error&&!m){m=error.message;try{const j=await error.context.json();m=j.error||j.message||m}catch(_){}if(error.name=="FunctionsFetchError")m="No se pudo contactar la función crear-usuario: verificá que esté desplegada";}if(m)return aviso("Error: "+m);vSolic([x,pw])});
  $("#vista").querySelectorAll("[data-r]").forEach(b=>b.onclick=async()=>{await ok(sb.from("solicitudes").update({estado:"rechazada"}).eq("id",b.dataset.r));vSolic()})}
 
 async function vCobro(){ENTS=await ok(sb.from("entidades").select("*").order("id"));
