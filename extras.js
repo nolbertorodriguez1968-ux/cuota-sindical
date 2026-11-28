@@ -45,14 +45,19 @@ function staff(){$("#tit").textContent=SUPER?"Panel Administrador":E.nombre;
 function empresaUI(){navegar([["emp","Mi empresa"],["decl","Declaración mensual"]],empresaUI);(tab=="emp"?vEmp:vDecl)()}
 
 // ---- Admin: padrón por Excel / PDF / foto ----
-const _vA=vAfiliados;
+const _vA=vAfiliados,TODAS=()=>ENTS.length?ENTS:[E];
 vAfiliados=async()=>{await _vA();
- $("#vista").insertAdjacentHTML("afterbegin",`<div class="card"><b>Cargar padrón desde Excel, PDF o foto</b> <span class="mut">(se carga en ${esc(E.nombre)})</span><div class="row"><input id="pf1" type="file" ${FA}><button id="pl">Leer archivo</button></div><div id="pv"></div></div>`);
+ $("#add").textContent="Agregar a ambas entidades";
+ $("#add").onclick=async()=>{const cuil=solo($("#cu").value);if(cuil.length!=11||!$("#no").value.trim())return aviso("Completá un CUIL de 11 dígitos y el nombre");
+  await ok(sb.from("afiliados").upsert(TODAS().map(e=>({entidad_id:e.id,cuil,nombre:$("#no").value.trim(),email:$("#co").value||null,cuota:$("#cq").value||null})),{onConflict:"entidad_id,cuil"}));aviso("Afiliado agregado en ambas entidades");vAfiliados()};
+ $("#lst").querySelectorAll("button").forEach(b=>b.onclick=async()=>{const {cuil}=await ok(sb.from("afiliados").select("cuil").eq("id",b.dataset.id).single());
+  await ok(sb.from("afiliados").update({estado:b.dataset.e=="activo"?"baja":"activo"}).eq("cuil",cuil));vAfiliados()});
+ $("#vista").insertAdjacentHTML("afterbegin",`<div class="card"><b>Cargar padrón desde Excel, PDF o foto</b> <span class="mut">(una sola carga: se aplica a SOETRA y FATREFU)</span><div class="row"><input id="pf1" type="file" ${FA}><button id="pl">Leer archivo</button></div><div id="pv"></div></div>`);
  $("#pl").onclick=async()=>{const f=$("#pf1").files[0];if(!f)return aviso("Elegí un archivo");
   try{const r=parsear(await leer(f));
    $("#pv").innerHTML=r.length?`<div class="wrap"><table><tr><th></th><th>CUIL</th><th>Nombre (editable)</th></tr>${r.map((x,i)=>`<tr><td><input type="checkbox" data-i="${i}" ${cuilOk(x.cuil)?"checked":""}></td><td class="${cuilOk(x.cuil)?"":"bad"}">${x.cuil}</td><td><input data-n="${i}" value="${esc(x.nombre)}"></td></tr>`).join("")}</table></div><p class="mut">En rojo: CUIL inválido (sin marcar). Revisá antes de importar.</p><p><button id="pi">Importar seleccionados</button></p>`:"No se encontraron CUIL en el archivo.";
-   if($("#pi"))$("#pi").onclick=async()=>{const rows=[...$("#pv").querySelectorAll("[data-i]:checked")].map(c=>({entidad_id:E.id,cuil:r[c.dataset.i].cuil,nombre:$(`#pv [data-n="${c.dataset.i}"]`).value.trim()||"Sin nombre"}));
-    await ok(sb.from("afiliados").upsert(rows,{onConflict:"entidad_id,cuil"}));aviso(rows.length+" afiliados importados");vAfiliados()}
+   if($("#pi"))$("#pi").onclick=async()=>{const rows=[...$("#pv").querySelectorAll("[data-i]:checked")].flatMap(c=>TODAS().map(e=>({entidad_id:e.id,cuil:r[c.dataset.i].cuil,nombre:$(`#pv [data-n="${c.dataset.i}"]`).value.trim()||"Sin nombre"})));
+    await ok(sb.from("afiliados").upsert(rows,{onConflict:"entidad_id,cuil"}));aviso(rows.length/TODAS().length+" afiliados importados en ambas entidades");vAfiliados()}
   }catch(e){aviso("No se pudo leer el archivo: "+e.message)}}};
 
 // ---- Admin: solicitudes ----
@@ -67,9 +72,10 @@ async function vSolic(cr){const s=await ok(sb.from("solicitudes").select("*").or
  $("#vista").querySelectorAll("[data-r]").forEach(b=>b.onclick=async()=>{await ok(sb.from("solicitudes").update({estado:"rechazada"}).eq("id",b.dataset.r));vSolic()})}
 
 async function vCobro(){ENTS=await ok(sb.from("entidades").select("*").order("id"));
- $("#vista").innerHTML=`<div class="card"><b>CBU de depósito y porcentaje de cada entidad</b>${ENTS.map(x=>`<div class="row" style="margin-top:8px"><div><label>${esc(x.nombre)} · CBU (22 dígitos)</label><input data-c="${x.id}" inputmode="numeric" value="${esc(x.cbu||"")}"></div><div><label>% sobre remuneración bruta</label><input data-p="${x.id}" type="number" step="0.01" value="${x.porcentaje??""}"></div><button data-g="${x.id}">Guardar</button></div>`).join("")}</div>`;
- $("#vista").querySelectorAll("[data-g]").forEach(b=>b.onclick=async()=>{const id=b.dataset.g,c=solo($(`[data-c="${id}"]`).value);if(c&&c.length!=22)return aviso("El CBU debe tener 22 dígitos");
-  await ok(sb.from("entidades").update({cbu:c||null,porcentaje:$(`[data-p="${id}"]`).value||null}).eq("id",id));aviso("Guardado")})}
+ $("#vista").innerHTML=`<div class="card"><b>CUIT, CBU de depósito y porcentaje de cada entidad</b>${ENTS.map(x=>`<div class="row" style="margin-top:8px"><div><label>${esc(x.nombre)} · CUIT</label><input data-u="${x.id}" inputmode="numeric" value="${esc(x.cuit||"")}"></div><div><label>CBU (22 dígitos)</label><input data-c="${x.id}" inputmode="numeric" value="${esc(x.cbu||"")}"></div><div><label>% sobre bruto</label><input data-p="${x.id}" type="number" step="0.01" value="${x.porcentaje??""}"></div><button data-g="${x.id}">Guardar</button></div>`).join("")}</div>`;
+ $("#vista").querySelectorAll("[data-g]").forEach(b=>b.onclick=async()=>{const id=b.dataset.g,c=solo($(`[data-c="${id}"]`).value),u=solo($(`[data-u="${id}"]`).value);
+  if(c&&c.length!=22)return aviso("El CBU debe tener 22 dígitos");if(u&&u.length!=11)return aviso("El CUIT debe tener 11 dígitos");
+  await ok(sb.from("entidades").update({cuit:u||null,cbu:c||null,porcentaje:$(`[data-p="${id}"]`).value||null}).eq("id",id));aviso("Guardado")})}
 
 // ---- RRHH / Contador ----
 async function vEmp(){const em=await ok(sb.from("empresas").select("*").order("razon_social"));
@@ -81,8 +87,10 @@ async function vEmp(){const em=await ok(sb.from("empresas").select("*").order("r
   await ok(id?sb.from("empresas").update(d).eq("id",id):sb.from("empresas").insert(d));aviso("Empresa guardada");vEmp()}}
 
 const r2=n=>Math.round(n*100)/100;
-function boleta(en,emp,per,it){const p=+en.porcentaje||0,r=it.filter(x=>+x.rem>0).map(x=>({...x,c:Math.round(x.rem*p)/100})),t=r2(r.reduce((s,x)=>s+x.c,0)),w=window.open("","_blank");
- w.document.write(`<html><head><title>Boleta ${esc(en.nombre)}</title><style>body{font:14px system-ui,sans-serif;margin:30px;color:#14213d}table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid #ccc;padding:5px;text-align:left}.t{font-size:22px;font-weight:700}</style></head><body><h1>BOLETA DE DEPÓSITO · ${esc(en.nombre)}</h1><p>Cuota sindical ${p}% sobre remuneración bruta · Período ${esc(per)}</p><p><b>Empresa:</b> ${esc(emp.razon_social)} · CUIT ${emp.cuit}<br><b>CBU de origen:</b> ${emp.cbu_origen}<br><b>Depositar en CBU de ${esc(en.nombre)}:</b> ${esc(en.cbu||"(no informado: consultar al sindicato)")}<br><b>Referencia:</b> ${emp.cuit}-${per.replace("-","")}-${esc(en.nombre)}</p><table><tr><th>CUIL</th><th>Afiliado</th><th>Remuneración bruta</th><th>Cuota</th></tr>${r.map(x=>`<tr><td>${x.cuil}</td><td>${esc(x.nombre)}</td><td>${$$(x.rem)}</td><td>${$$(x.c)}</td></tr>`).join("")}</table><p class="t">TOTAL A DEPOSITAR: ${$$(t)}</p></body></html>`);w.document.close();setTimeout(()=>w.print(),400)}
+function boletas(ens,emp,per,it){const w=window.open("","_blank");if(!w)return aviso("Permití las ventanas emergentes para ver las boletas");
+ const pag=en=>{const p=+en.porcentaje||0,r=it.filter(x=>+x.rem>0).map(x=>({...x,c:Math.round(x.rem*p)/100})),t=r2(r.reduce((s,x)=>s+x.c,0));
+  return`<section><h1>BOLETA DE DEPÓSITO · ${esc(en.nombre)}</h1><p>Cuota sindical ${p}% sobre remuneración bruta · Período ${esc(per)}</p><p><b>Depositar a:</b> ${esc(en.nombre)} · CUIT ${esc(en.cuit||"(no informado)")}<br><b>CBU destino:</b> ${esc(en.cbu||"(no informado: consultar al sindicato)")}</p><p><b>Empresa:</b> ${esc(emp.razon_social)} · CUIT ${emp.cuit}<br><b>CBU de origen:</b> ${emp.cbu_origen}<br><b>Referencia:</b> ${emp.cuit}-${per.replace("-","")}-${esc(en.nombre)}</p><table><tr><th>CUIL</th><th>Afiliado</th><th>Remuneración bruta</th><th>Cuota</th></tr>${r.map(x=>`<tr><td>${x.cuil}</td><td>${esc(x.nombre)}</td><td>${$$(x.rem)}</td><td>${$$(x.c)}</td></tr>`).join("")}</table><p class="t">TOTAL A DEPOSITAR: ${$$(t)}</p></section>`};
+ w.document.write(`<html><head><title>Boletas de depósito</title><style>body{font:14px system-ui,sans-serif;margin:30px;color:#14213d}table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid #ccc;padding:5px;text-align:left}.t{font-size:22px;font-weight:700}section{page-break-after:always}section:last-child{page-break-after:auto}</style></head><body>${ens.map(pag).join("")}</body></html>`);w.document.close();setTimeout(()=>w.print(),400)}
 
 async function vDecl(){const em=await ok(sb.from("empresas").select("*").order("razon_social"));
  if(!em.length){$("#vista").innerHTML='<div class="card">Primero cargá tu empresa en la pestaña "Mi empresa".</div>';return}
@@ -90,14 +98,13 @@ async function vDecl(){const em=await ok(sb.from("empresas").select("*").order("
  let it=[];
  const tot=()=>{$("#tt").innerHTML=ENTS.map(en=>{const p=+en.porcentaje||0;return`<p>${esc(en.nombre)} ${p}%: <b>${$$(r2(it.reduce((s,x)=>s+(+x.rem>0?Math.round(x.rem*p)/100:0),0)))}</b></p>`}).join("")};
  const pintar=()=>{$("#dl").innerHTML=`<div class="card wrap"><b>${it.length} afiliados identificados</b><table><tr><th>CUIL</th><th>Afiliado</th><th>Remuneración bruta</th></tr>${it.map((x,i)=>`<tr><td>${x.cuil}</td><td>${esc(x.nombre)}</td><td><input type="number" step="0.01" data-r="${i}" value="${x.rem}" placeholder="0,00"></td></tr>`).join("")}</table>
-  <div class="row" style="margin-top:10px"><div><label>Agregar afiliado por CUIL</label><input id="ac" inputmode="numeric"></div><button class="sec" id="aa">Agregar</button></div><div id="tt" style="margin-top:10px"></div><p><button id="dg">Guardar y generar boletas</button></p><div id="bo"></div></div>`;
+  <div class="row" style="margin-top:10px"><div><label>Agregar afiliado por CUIL</label><input id="ac" inputmode="numeric"></div><button class="sec" id="aa">Agregar</button></div><div id="tt" style="margin-top:10px"></div><p id="ck">${ENTS.map(en=>`<label style="display:inline-block;margin-right:16px;color:inherit"><input type="checkbox" data-k="${en.id}" checked style="width:auto"> Boleta ${esc(en.nombre)} ${+en.porcentaje||0}%</label>`).join("")}</p><p><button id="dg">Guardar y generar boletas</button></p><div id="bo"></div></div>`;
   $("#dl").querySelectorAll("[data-r]").forEach(i=>i.oninput=()=>{it[i.dataset.r].rem=i.value;tot()});tot();
   $("#aa").onclick=async()=>{const c=solo($("#ac").value),a=await ok(sb.rpc("identificar_afiliados",{p_cuils:[c]}));if(!a.length)return aviso("Ese CUIL no figura como afiliado");if(!it.some(x=>x.cuil==c))it.push({cuil:c,nombre:a[0].nombre,rem:""});pintar()};
   $("#dg").onclick=async()=>{const emp=em.find(x=>x.id==$("#de").value),per=$("#dp").value,v=it.filter(x=>+x.rem>0);if(!v.length)return aviso("Cargá al menos una remuneración bruta");
-   const montos={};ENTS.forEach(en=>montos[en.nombre]=r2(v.reduce((s,x)=>s+Math.round(x.rem*(+en.porcentaje||0))/100,0)));
+   const sel=ENTS.filter(en=>$(`#ck [data-k="${en.id}"]`).checked);if(!sel.length)return aviso("Tildá al menos una boleta");const montos={};sel.forEach(en=>montos[en.nombre]=r2(v.reduce((s,x)=>s+Math.round(x.rem*(+en.porcentaje||0))/100,0)));
    await ok(sb.from("declaraciones").insert({empresa_id:emp.id,periodo:per+"-01",items:v,total_bruto:r2(v.reduce((s,x)=>s+ +x.rem,0)),montos}));
-   $("#bo").innerHTML="<p class='ok'>Declaración guardada.</p>"+ENTS.map(en=>`<button data-b="${en.id}">Boleta ${esc(en.nombre)} ${+en.porcentaje||0}%</button> `).join("");
-   $("#bo").querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>boleta(ENTS.find(x=>x.id==b.dataset.b),emp,per,it))}};
+   $("#bo").innerHTML="<p class='ok'>Declaración guardada.</p>";boletas(sel,emp,per,v)}};
  $("#di").onclick=async()=>{const f=$("#df").files[0];if(!f)return aviso("Elegí el archivo de la nómina");
   try{const c=parsear(await leer(f)).filter(x=>cuilOk(x.cuil)).map(x=>x.cuil),a=c.length?await ok(sb.rpc("identificar_afiliados",{p_cuils:c})):[];
    it=a.map(x=>({cuil:x.cuil,nombre:x.nombre,rem:""}));it.length?pintar():($("#dl").innerHTML='<div class="card">No se encontraron afiliados en el archivo.</div>')}catch(e){aviso("No se pudo leer el archivo: "+e.message)}}}
